@@ -9,8 +9,8 @@
 
 import arcpy
 from datetime import datetime
-from sys import exc_info # disable for prod
-import traceback # disable for prod
+#from sys import exc_info # disable for prod
+#import traceback # disable for prod
 
 def status(msg): #logging function
     print msg
@@ -18,7 +18,7 @@ def status(msg): #logging function
     arcpy.SetProgressorLabel(msg)
     X = 3
 
-#CONFIG 
+#CONFIG
 db = r"\\niflheim\data\SDE_CONNECTIONS\niflheim_express1_collegefootball_webeditor.sde"
 features = db  + "\\collegefootball.DBO.zips_winkel"
 votes_table = db + "\\collegefootball.DBO.votes"
@@ -27,9 +27,9 @@ uid_field = "COOKIE"
 location_field = "LOCATION" #"POSTAL" # "GEONAMEID" # both the votes and zips_winkel (eventually to become generic "places") must have a field called "LOCATION"
 
 # don't change stuff past here
-location = arcpy.GetParameterAsText(0) or "14256" #or "T7A"
+location = arcpy.GetParameterAsText(0) or "92374" #or "T7A"
 uid = arcpy.GetParameterAsText(1) or None
-input_votes = arcpy.GetParameterAsText(2) or "CHOICE01"
+input_votes = arcpy.GetParameterAsText(2) or "CHOICE001"
 
 search_where = location_field+" = '"+location+"'"
 
@@ -51,7 +51,7 @@ def updateFeatures(_features):
     status("Where: "+search_where)
     cursor_update = arcpy.UpdateCursor(_features, search_where) #needs error handling to deal with db lock?
     update_row = cursor_update.next()
-    
+
     for vote in votes:
         status("Incrementing field: "+vote[0]+" by "+vote[1])
         value = update_row.getValue(vote[0])
@@ -59,16 +59,16 @@ def updateFeatures(_features):
             value = 0
         update_row.setValue(vote[0], value+int(vote[1]))
         #print update_row.getValue(field)
-    
+
     cursor_update.updateRow(update_row)
     del update_row
     del cursor_update
     status("Vote successfully added to feature class")
 
-try: 
+try:
     status("Processing votes for Location: "+location)
     status("Votes: "+str(votes))
-    
+
     cursor_insert = arcpy.InsertCursor(votes_table)
     vote_row = cursor_insert.newRow()
     for vote in votes:
@@ -87,26 +87,26 @@ try:
 
     updateFeatures(features)
     #updateFeatures(polys)
-    
+
 except arcpy.ExecuteError:
-    # Get the tool error messages 
-    # 
-    msgs = arcpy.GetMessages(2) 
-
-    # Return tool error messages for use with a script tool 
+    # Get the tool error messages
     #
-    arcpy.AddError(msgs) 
+    msgs = arcpy.GetMessages(2)
 
-    # Print tool error messages for use in Python/PythonWin 
-    # 
+    # Return tool error messages for use with a script tool
+    #
+    arcpy.AddError(msgs)
+
+    # Print tool error messages for use in Python/PythonWin
+    #
     print msgs
-            
+
 #except: # disable all this for prod
     ## Get the traceback object
     ##
     #tb = exc_info()[2]
     #tbinfo = traceback.format_tb(tb)[0]
-    
+
     ## Concatenate information together concerning the error into a message string
     ##
     #pymsg = "PYTHON ERRORS:\nTraceback info:\n" + tbinfo + "\nError Info:\n" + str(exc_info()[1])
@@ -120,11 +120,11 @@ except arcpy.ExecuteError:
     ## Print Python error messages for use in Python / Python Window
     ##
     #print pymsg + "\n"
-    #print msgs 
-    
-
-    
+    #print msgs
 
 
 
-    
+
+
+
+
