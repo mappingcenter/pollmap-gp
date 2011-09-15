@@ -13,7 +13,7 @@ from string import join
 
 # connect to database using sde connection file
 db = r"D:\Data\SDE_CONNECTIONS\niflheim_express1_collegefootball_webeditor.sde"
-features = db  + "\\collegefootball.DBO.zips_winkel"
+features = db  + "\\collegefootball.DBO.features"
 
 def status(msg): #logging function
     #print msg
