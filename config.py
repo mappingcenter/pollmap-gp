@@ -42,10 +42,11 @@ def tableToObj(table, choicesField=''):
     for row in tableRows:
         rowObj = {}
         for field in tableFields:
-            if (field.name == choicesField):
-                robObj[field.name] = buildChoicesObj(row.getValue(field.name))
-            else:
-                rowObj[field.name] = row.getValue(field.name)
+            if (field.name != "OBJECTID"):
+                if (field.name == choicesField):
+                    robObj[field.name] = buildChoicesObj(row.getValue(field.name))
+                else:
+                    rowObj[field.name] = row.getValue(field.name)
         obj.append(rowObj)
     del tableRows
     del tableFields
@@ -60,14 +61,30 @@ def buildChoicesObj(choiceStr, table=choicesTable, key='field'):
         choiceObj = {}
         choiceRow = arcpy.SearchCursor(table,key+"='"+choice+"'").next()
         for field in choicesFields:
-            choiceObj[field.name] = choiceRow.getValue(field.name)
+            if (field.name != "OBJECTID"):
+                choiceObj[field.name] = choiceRow.getValue(field.name)
         choicesObj.append(choiceObj)
         del choiceRow
     return choicesObj
 
+# special function to build an obj from a key/value store
+def buildAppConfigObj(table):
+    tableRows = arcpy.SearchCursor(table)
+    tableFields = map(getFieldName, arcpy.ListFields(table)) # equals (OBJECTID, name, value)
+    obj = {}
+    for row in tableRows:
+        obj[row.getValue(tableFields[1])] = row.getValue(tableFields[2])
+    del tableRows
+    del tableFields
+    return obj
+
+# for map
+def getFieldName(field): return field.name
+
 try:
-    #configObj = tableToObj(configTable)
     configObj = {}
+    configObj['app'] = buildAppConfigObj(configTable) # special app config table with JS literals, to be processed with eval() later?
+    #configObj['config'] = tableToObj(configTable)
     configObj['maps'] = tableToObj(mapsTable)
     configObj['questions'] = tableToObj(questionsTable)
 
