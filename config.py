@@ -87,8 +87,8 @@ def getFieldName(field): return field.name
 def getFieldNameList(table): return map(getFieldName, arcpy.ListFields(table))
 
 try:
-    configObj = {}
-    configObj['app'] = buildAppConfigObj(configTable) # special app config table with JS literals, to be processed with eval() later
+#    configObj = {}
+    configObj = buildAppConfigObj(configTable) # special app config table with JS literals, to be processed with eval() later
     configObj['maps'] = tableToObj(mapsTable)
     configObj['questions'] = tableToObj(questionsTable)
     
