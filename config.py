@@ -15,24 +15,26 @@ def status(msg): #logging function
     arcpy.AddMessage(msg)
     arcpy.SetProgressorLabel(msg)
 
-
+# the database to connect to
 db = arcpy.GetParameterAsText(0) or r"\\niflheim\data\SDE_CONNECTIONS\niflheim_express1_collegefootball_webeditor.sde"
 
+#table prefix, used to build the table names for the standard pollmap tables (names are now set by convention)
 if arcpy.GetParameterAsText(1) == '#' or not arcpy.GetParameterAsText(1):
     tablePrefix = db + "\\collegefootball.dbo."
 else:
     tablePrefix = db + arcpy.GetParameterAsText(1)
 
-status(db)
-status(tablePrefix)
 
 RESULT = ""
+
+#the standard pollmap tables
 choicesTable = tablePrefix + "choices"
 mapsTable = tablePrefix + "maps"
 questionsTable = tablePrefix + "questions"
 configTable = tablePrefix + "config"
 
 
+# converts a fanmap table into a python object, including sending any "choices" fields through buildChoicesObj to get a cross-ref'd object of the choice and its properties
 def tableToObj(table, choicesField=''):
     status("tableToObj")
     obj = {}
@@ -52,6 +54,7 @@ def tableToObj(table, choicesField=''):
     del tableFields
     return obj
 
+# this takes a string of choice names (CHOICE001,CHOICE002,CHOICE003) and a choices table to build a an array of choice objects
 def buildChoicesObj(choiceStr, table=choicesTable, key='field'):
     status("buildChoicesObj")
     choicesObj = []
@@ -70,7 +73,7 @@ def buildChoicesObj(choiceStr, table=choicesTable, key='field'):
 # special function to build an obj from a key/value store
 def buildAppConfigObj(table):
     tableRows = arcpy.SearchCursor(table)
-    tableFields = map(getFieldName, arcpy.ListFields(table)) # equals (OBJECTID, name, value)
+    tableFields = getFieldNameList(table) # equals (OBJECTID, name, value)
     obj = {}
     for row in tableRows:
         obj[row.getValue(tableFields[1])] = row.getValue(tableFields[2])
@@ -78,16 +81,17 @@ def buildAppConfigObj(table):
     del tableFields
     return obj
 
-# for map
+# for mapping a list of field objects to a list of field names
 def getFieldName(field): return field.name
+# returns a list of field names for a given table
+def getFieldNameList(table): return map(getFieldName, arcpy.ListFields(table))
 
 try:
     configObj = {}
-    configObj['app'] = buildAppConfigObj(configTable) # special app config table with JS literals, to be processed with eval() later?
-    #configObj['config'] = tableToObj(configTable)
+    configObj['app'] = buildAppConfigObj(configTable) # special app config table with JS literals, to be processed with eval() later
     configObj['maps'] = tableToObj(mapsTable)
     configObj['questions'] = tableToObj(questionsTable)
-
+    
     RESULT = json.dumps(configObj)
     status(RESULT)
     arcpy.SetParameterAsText(2, RESULT)
