@@ -25,7 +25,10 @@ else:
     tablePrefix = db + arcpy.GetParameterAsText(1)
 
 
-RESULT = ""
+RESULT = r'%scratchworkspace%\result' # arcpy.GetParameterAsText(2)
+if RESULT == '#' or not RESULT:
+    RESULTS = r'%scratchworkspace%\result' # provide a default value if unspecified
+
 
 #the standard pollmap tables
 choicesTable = tablePrefix + "choices"
@@ -35,7 +38,7 @@ configTable = tablePrefix + "config"
 
 
 # converts a fanmap table into a python object, including sending any "choices" fields through buildChoicesObj to get a cross-ref'd object of the choice and its properties
-def tableToObj(table, choicesField=''):
+def tableToObj(table, choicesField='choices'):
     status("tableToObj")
     obj = {}
     tableRows = arcpy.SearchCursor(table)
@@ -46,7 +49,7 @@ def tableToObj(table, choicesField=''):
         for field in tableFields:
             if (field.name != "OBJECTID"):
                 if (field.name == choicesField):
-                    robObj[field.name] = buildChoicesObj(row.getValue(field.name))
+                    rowObj[field.name] = buildChoicesObj(row.getValue(field.name))
                 else:
                     rowObj[field.name] = row.getValue(field.name)
         obj.append(rowObj)
@@ -56,20 +59,22 @@ def tableToObj(table, choicesField=''):
 
 # this takes a string of choice names (CHOICE001,CHOICE002,CHOICE003) and a choices table to build a an array of choice objects
 def buildChoicesObj(choiceStr, table=choicesTable, key='field'):
-    status("buildChoicesObj")
-    choicesObj = []
-    choices = choiceStr.split(',')
-    choicesFields = arcpy.ListFields(table)
-    for choice in choices:
-        choiceObj = {}
-        choiceRow = arcpy.SearchCursor(table,key+"='"+choice+"'").next()
-        for field in choicesFields:
-            if (field.name != "OBJECTID"):
-                choiceObj[field.name] = choiceRow.getValue(field.name)
-        choicesObj.append(choiceObj)
-        del choiceRow
-    return choicesObj
-
+    if (choiceStr):
+        status("buildChoicesObj")
+        choicesObj = []
+        choices = choiceStr.split(',')
+        choicesFields = arcpy.ListFields(table)
+        for choice in choices:
+            choiceObj = {}
+            choiceRow = arcpy.SearchCursor(table,key+"='"+choice+"'").next()
+            for field in choicesFields:
+                if (field.name != "OBJECTID"):
+                    choiceObj[field.name] = choiceRow.getValue(field.name)
+            choicesObj.append(choiceObj)
+            del choiceRow
+        return choicesObj
+    else:
+        return None
 # special function to build an obj from a key/value store
 def buildAppConfigObj(table):
     tableRows = arcpy.SearchCursor(table)
@@ -87,8 +92,8 @@ def getFieldName(field): return field.name
 def getFieldNameList(table): return map(getFieldName, arcpy.ListFields(table))
 
 try:
-#    configObj = {}
-    configObj = buildAppConfigObj(configTable) # special app config table with JS literals, to be processed with eval() later
+    configObj = {}
+    configObj['app'] = buildAppConfigObj(configTable) # special app config table with JS literals, to be processed with eval() later
     configObj['maps'] = tableToObj(mapsTable)
     configObj['questions'] = tableToObj(questionsTable)
     
